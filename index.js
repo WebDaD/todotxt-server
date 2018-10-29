@@ -14,17 +14,36 @@ const dfs = require('dropbox-fs/')({
 
 const todotxt = require('todotxt')
 
+const regexNotes = /notes:(.*)/g
+
 app.use(bodyParser.json()) // for parsing application/json
 
 app.use('/', express.static(path.join(__dirname, 'site'))) // Load Page
 
 app.get('/todo.json', function (req, res) { // Display all Todos as JSON
-  dfs.readFile('/br/todos/todo.txt', {encoding: 'utf8'}, (err, result) => {
+  getTasks(function (err, tasks) {
     if (err) {
       res.status(500).send(err)
     } else {
-      let tasks = todotxt.parse(result)
       res.json(tasks)
+    }
+  })
+})
+app.get('/top10.json', function (req, res) { // Display top 10 Tasks: Prio > Number
+  getTasks(function (err, tasks) {
+    if (err) {
+      res.status(500).send(err)
+    } else {
+      tasks.sort(function (a, b) {
+        if (a.priority === '') a.priority = 'Z' // if no prio, use the last one (Z)
+        if (b.priority === '') b.priority = 'Z' // if no prio, use the last one (Z)
+        if (a.priority === b.priority) {
+          return a.number > b.number ? 1 : -1
+        } else {
+          return a.priority > b.priority ? 1 : -1
+        }
+      })
+      res.json(tasks.slice(0, 10))
     }
   })
 })
@@ -68,6 +87,21 @@ app.get('/contexts.json', function (req, res) { // Display all Contexts
   })
 })
 
+app.get('/priorities.json', function (req, res) { // Display all priorities
+  dfs.readFile('/br/todos/todo.txt', {encoding: 'utf8'}, (err, result) => {
+    if (err) {
+      res.status(500).send(err)
+    } else {
+      let tasks = todotxt.parse(result)
+      let priorities = []
+      tasks.forEach(function (task) {
+        priorities = priorities.concat(task.priority)
+      })
+      res.json([...new Set(priorities)])
+    }
+  })
+})
+
 app.post('/quick', function (req, res) { // Add a Line to quick.txt
   let data = req.body
   dfs.readFile('/br/todos/quick.txt', {encoding: 'utf8'}, (err, result) => {
@@ -93,11 +127,13 @@ app.put('/done/:number', function (req, res) { // Mark as Done
       res.status(500).send(err)
     } else {
       let tasks = todotxt.parse(result)
-      tasks.forEach(function (task) {
-        if (task.number === req.params.number) {
-          task.complete = true
+      for (let index = 0; index < tasks.length; index++) {
+        const element = tasks[index]
+        if (element.number.toString() === req.params.number.toString()) {
+          element.complete = true
+          break
         }
-      })
+      }
       let content = todotxt.stringify(tasks)
       dfs.writeFile('/br/todos/todo.txt', content, {encoding: 'utf8'}, (err, stat) => {
         if (err) {
@@ -106,7 +142,7 @@ app.put('/done/:number', function (req, res) { // Mark as Done
           res.status(200).end()
         }
       })
-      res.send(result)
+      res.send(tasks)
     }
   })
 })
@@ -114,3 +150,28 @@ app.put('/done/:number', function (req, res) { // Mark as Done
 server.listen(port)
 
 console.log('todotxt-server running on Port ' + port)
+
+function getTasks (callback) {
+  dfs.readFile('/br/todos/todo.txt', {encoding: 'utf8'}, (err, result) => {
+    if (err) {
+      callback(err)
+    } else {
+      let tasks = todotxt.parse(result)
+      tasks.forEach(function (task) {
+        let m
+        while ((m = regexNotes.exec(task.text)) !== null) {
+          // This is necessary to avoid infinite loops with zero-width matches
+          if (m.index === regexNotes.lastIndex) {
+            regexNotes.lastIndex++
+          }
+          // The result can be accessed through the `m`-variable.
+          m.forEach((match, groupIndex) => {
+            task.notes = 'https://notes.webdad.eu/#' + match
+          })
+        }
+        task.cleantext = task.text.replace(/(@\S+)/gi, '').replace(/(\+\S+)/gi, '').replace(/(notes:\S+)/gi, '').trim()
+      })
+      callback(null, tasks)
+    }
+  })
+}
