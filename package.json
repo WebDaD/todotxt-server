@@ -9,6 +9,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "express": "^4.16.4"
+    "body-parser": "^1.18.3",
+    "dropbox-fs": "^0.3.0",
+    "express": "^4.16.4",
+    "todotxt": "^1.1.1"
   }
 }
