@@ -17,6 +17,8 @@
       }
     })
     .controller('todotxt-Main', ['$http', '$location', '$cookies', function ($http, $location, $cookies) {
+      $http.defaults.headers.token = '7405e62IDYV6euz2tRhHP38dXF'
+
       var self = this
       self.tasks = []
       self.contexts = []
