@@ -15,14 +15,22 @@ try {
 const port = process.env.PORT || config.port
 const dropboxApiKey = process.env.DROPBOXAPIKEY || config.dropboxapikey
 const dropboxFolder = process.env.DROPBOXFOLDER || config.dropboxfolder
+const authUser = process.env.AUTHUSER || config.authuser
+const authPWd = process.env.AUTHPWD || config.authpwd
 
 const dfs = require('dropbox-fs/')({
   apiKey: dropboxApiKey
 })
-
 const todotxt = require('todotxt')
 
 const regexNotes = /notes:(.*)/g
+
+const basicAuth = require('express-basic-auth')
+app.use(basicAuth({
+  users: { authUser: authPWd },
+  challenge: true,
+  realm: 'Todo.txt node.js-Server'
+}))
 
 app.use(bodyParser.json()) // for parsing application/json
 
