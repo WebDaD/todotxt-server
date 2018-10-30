@@ -1,4 +1,5 @@
 {
   "port":9000,
-  "dropboxapikey":"Ry-RFcRwRIAAAAAAAACKejIVhLmXJRK5P449P6dh-9A8yrT2mY1DwVsNLN-DN8td"
+  "dropboxapikey":"Ry-RFcRwRIAAAAAAAACKejIVhLmXJRK5P449P6dh-9A8yrT2mY1DwVsNLN-DN8td",
+  "dropboxfolder":"/br/todos"
 }

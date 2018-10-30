@@ -1,3 +1,5 @@
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
+
 const express = require('express')
 const bodyParser = require('body-parser')
 const path = require('path')
@@ -7,6 +9,7 @@ const config = require('./config.json')
 
 const port = process.env.PORT || config.port
 const dropboxApiKey = process.env.DROPBOXAPIKEY || config.dropboxapikey
+const dropboxFolder = process.env.DROPBOXFOLDER || config.dropboxfolder
 
 const dfs = require('dropbox-fs/')({
   apiKey: dropboxApiKey
@@ -48,7 +51,7 @@ app.get('/top10.json', function (req, res) { // Display top 10 Tasks: Prio > Num
   })
 })
 app.get('/todo.txt', function (req, res) { // Display all Todos as TXT (eg the File)
-  dfs.readFile('/br/todos/todo.txt', {encoding: 'utf8'}, (err, result) => {
+  dfs.readFile(path.join(dropboxFolder, 'todo.txt'), {encoding: 'utf8'}, (err, result) => {
     if (err) {
       res.status(500).send(err)
     } else {
@@ -58,7 +61,7 @@ app.get('/todo.txt', function (req, res) { // Display all Todos as TXT (eg the F
 })
 
 app.get('/projects.json', function (req, res) { // Display all Projects
-  dfs.readFile('/br/todos/todo.txt', {encoding: 'utf8'}, (err, result) => {
+  dfs.readFile(path.join(dropboxFolder, 'todo.txt'), {encoding: 'utf8'}, (err, result) => {
     if (err) {
       res.status(500).send(err)
     } else {
@@ -73,7 +76,7 @@ app.get('/projects.json', function (req, res) { // Display all Projects
 })
 
 app.get('/contexts.json', function (req, res) { // Display all Contexts
-  dfs.readFile('/br/todos/todo.txt', {encoding: 'utf8'}, (err, result) => {
+  dfs.readFile(path.join(dropboxFolder, 'todo.txt'), {encoding: 'utf8'}, (err, result) => {
     if (err) {
       res.status(500).send(err)
     } else {
@@ -88,7 +91,7 @@ app.get('/contexts.json', function (req, res) { // Display all Contexts
 })
 
 app.get('/priorities.json', function (req, res) { // Display all priorities
-  dfs.readFile('/br/todos/todo.txt', {encoding: 'utf8'}, (err, result) => {
+  dfs.readFile(path.join(dropboxFolder, 'todo.txt'), {encoding: 'utf8'}, (err, result) => {
     if (err) {
       res.status(500).send(err)
     } else {
@@ -104,12 +107,12 @@ app.get('/priorities.json', function (req, res) { // Display all priorities
 
 app.post('/quick', function (req, res) { // Add a Line to quick.txt
   let data = req.body
-  dfs.readFile('/br/todos/quick.txt', {encoding: 'utf8'}, (err, result) => {
+  dfs.readFile(path.join(dropboxFolder, 'quick.txt'), {encoding: 'utf8'}, (err, result) => {
     if (err) {
       res.status(500).send(err)
     } else {
       let content = result + '\n' + data
-      dfs.writeFile('/br/todos/quick.txt', content, {encoding: 'utf8'}, (err, stat) => {
+      dfs.writeFile(path.join(dropboxFolder, 'quick.txt'), content, {encoding: 'utf8'}, (err, stat) => {
         if (err) {
           res.status(500).send(err)
         } else {
@@ -122,7 +125,7 @@ app.post('/quick', function (req, res) { // Add a Line to quick.txt
 })
 
 app.put('/done/:number', function (req, res) { // Mark as Done
-  dfs.readFile('/br/todos/todo.txt', {encoding: 'utf8'}, (err, result) => {
+  dfs.readFile(path.join(dropboxFolder, 'todo.txt'), {encoding: 'utf8'}, (err, result) => {
     if (err) {
       res.status(500).send(err)
     } else {
@@ -135,7 +138,7 @@ app.put('/done/:number', function (req, res) { // Mark as Done
         }
       }
       let content = todotxt.stringify(tasks)
-      dfs.writeFile('/br/todos/todo.txt', content, {encoding: 'utf8'}, (err, stat) => {
+      dfs.writeFile(path.join(dropboxFolder, 'todo.txt'), content, {encoding: 'utf8'}, (err, stat) => {
         if (err) {
           res.status(500).send(err)
         } else {
@@ -152,7 +155,7 @@ server.listen(port)
 console.log('todotxt-server running on Port ' + port)
 
 function getTasks (callback) {
-  dfs.readFile('/br/todos/todo.txt', {encoding: 'utf8'}, (err, result) => {
+  dfs.readFile(path.join(dropboxFolder, 'todo.txt'), {encoding: 'utf8'}, (err, result) => {
     if (err) {
       callback(err)
     } else {
