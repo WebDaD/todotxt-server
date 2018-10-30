@@ -26,6 +26,12 @@ const regexNotes = /notes:(.*)/g
 
 app.use(bodyParser.json()) // for parsing application/json
 
+app.use(function (req, res, next) { // Enable Cors
+  res.header('Access-Control-Allow-Origin', '*')
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept')
+  next()
+})
+
 app.use('/', express.static(path.join(__dirname, 'site'))) // Load Page
 
 app.get('/todo.json', function (req, res) { // Display all Todos as JSON
