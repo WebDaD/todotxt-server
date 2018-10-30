@@ -33,7 +33,7 @@ app.use(function (req, res, next) { // Enable Cors
   next()
 })
 
-app.use('/', authToken(), express.static(path.join(__dirname, 'site'))) // Load Page
+app.use('/', express.static(path.join(__dirname, 'site'))) // Load Page
 
 function authToken () {
   return function (req, res, next) {
