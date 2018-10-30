@@ -15,8 +15,7 @@ try {
 const port = process.env.PORT || config.port
 const dropboxApiKey = process.env.DROPBOXAPIKEY || config.dropboxapikey
 const dropboxFolder = process.env.DROPBOXFOLDER || config.dropboxfolder
-const authUser = process.env.AUTHUSER || config.authuser
-const authPWd = process.env.AUTHPWD || config.authpwd
+const token = process.env.TOKEN || config.token
 
 const dfs = require('dropbox-fs/')({
   apiKey: dropboxApiKey
@@ -24,13 +23,6 @@ const dfs = require('dropbox-fs/')({
 const todotxt = require('todotxt')
 
 const regexNotes = /notes:(.*)/g
-
-const basicAuth = require('express-basic-auth')
-app.use(basicAuth({
-  users: { authUser: authPWd },
-  challenge: true,
-  realm: 'Todo.txt node.js-Server'
-}))
 
 app.use(bodyParser.json()) // for parsing application/json
 
@@ -41,9 +33,26 @@ app.use(function (req, res, next) { // Enable Cors
   next()
 })
 
-app.use('/', express.static(path.join(__dirname, 'site'))) // Load Page
+app.use('/', authToken(), express.static(path.join(__dirname, 'site'))) // Load Page
 
-app.get('/todo.json', function (req, res) { // Display all Todos as JSON
+function authToken () {
+  return function (req, res, next) {
+    let givenToken = req.query.token || req.headers.token
+    if (typeof givenToken === 'undefined') {
+      console.error('Login without Token!')
+      res.status(403).end()
+    } else {
+      if (token === givenToken) {
+        next()
+      } else {
+        console.error('Login with wrong Token: ' + givenToken)
+        res.status(403).end()
+      }
+    }
+  }
+}
+
+app.get('/todo.json', authToken(), function (req, res) { // Display all Todos as JSON
   getTasks(function (err, tasks) {
     if (err) {
       res.status(500).send(err)
@@ -52,7 +61,7 @@ app.get('/todo.json', function (req, res) { // Display all Todos as JSON
     }
   })
 })
-app.get('/top10.json', function (req, res) { // Display top 10 Tasks: Prio > Number
+app.get('/top10.json', authToken(), function (req, res) { // Display top 10 Tasks: Prio > Number
   getTasks(function (err, tasks) {
     if (err) {
       res.status(500).send(err)
@@ -70,7 +79,7 @@ app.get('/top10.json', function (req, res) { // Display top 10 Tasks: Prio > Num
     }
   })
 })
-app.get('/todo.txt', function (req, res) { // Display all Todos as TXT (eg the File)
+app.get('/todo.txt', authToken(), function (req, res) { // Display all Todos as TXT (eg the File)
   dfs.readFile(path.join(dropboxFolder, 'todo.txt'), {encoding: 'utf8'}, (err, result) => {
     if (err) {
       res.status(500).send(err)
@@ -80,7 +89,7 @@ app.get('/todo.txt', function (req, res) { // Display all Todos as TXT (eg the F
   })
 })
 
-app.get('/projects.json', function (req, res) { // Display all Projects
+app.get('/projects.json', authToken(), function (req, res) { // Display all Projects
   dfs.readFile(path.join(dropboxFolder, 'todo.txt'), {encoding: 'utf8'}, (err, result) => {
     if (err) {
       res.status(500).send(err)
@@ -95,7 +104,7 @@ app.get('/projects.json', function (req, res) { // Display all Projects
   })
 })
 
-app.get('/contexts.json', function (req, res) { // Display all Contexts
+app.get('/contexts.json', authToken(), function (req, res) { // Display all Contexts
   dfs.readFile(path.join(dropboxFolder, 'todo.txt'), {encoding: 'utf8'}, (err, result) => {
     if (err) {
       res.status(500).send(err)
@@ -110,7 +119,7 @@ app.get('/contexts.json', function (req, res) { // Display all Contexts
   })
 })
 
-app.get('/priorities.json', function (req, res) { // Display all priorities
+app.get('/priorities.json', authToken(), function (req, res) { // Display all priorities
   dfs.readFile(path.join(dropboxFolder, 'todo.txt'), {encoding: 'utf8'}, (err, result) => {
     if (err) {
       res.status(500).send(err)
@@ -125,7 +134,7 @@ app.get('/priorities.json', function (req, res) { // Display all priorities
   })
 })
 
-app.post('/quick', function (req, res) { // Add a Line to quick.txt
+app.post('/quick', authToken(), function (req, res) { // Add a Line to quick.txt
   let data = req.body
   dfs.readFile(path.join(dropboxFolder, 'quick.txt'), {encoding: 'utf8'}, (err, result) => {
     if (err) {
@@ -144,7 +153,7 @@ app.post('/quick', function (req, res) { // Add a Line to quick.txt
   })
 })
 
-app.put('/done/:number', function (req, res) { // Mark as Done
+app.put('/done/:number', authToken(), function (req, res) { // Mark as Done
   dfs.readFile(path.join(dropboxFolder, 'todo.txt'), {encoding: 'utf8'}, (err, result) => {
     if (err) {
       res.status(500).send(err)
