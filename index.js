@@ -5,7 +5,12 @@ const bodyParser = require('body-parser')
 const path = require('path')
 const app = express()
 const server = require('http').createServer(app)
-const config = require('./config.json')
+let config = {}
+try {
+  config = require('./config.json')
+} catch (e) {
+  console.log('No Config File given')
+}
 
 const port = process.env.PORT || config.port
 const dropboxApiKey = process.env.DROPBOXAPIKEY || config.dropboxapikey
